@@ -53,3 +53,5 @@ and gradient-scheme adaptive restarting ([O'Donoghue and Candes 2013](http://bod
 
 see notebooks/ for usage instances
 
+to install type
+`python setup.py install`
