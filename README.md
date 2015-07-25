@@ -1,8 +1,7 @@
 apgpy
 =====================
-(@author bodonoghue) python package 
-Implements an Accelerated Proximal Gradient method
-(Nesterov 2007, Beck and Teboulle 2009)
+Python package that implements an accelerated proximal gradient method for 
+minimizing convex functions (Nesterov 2007, Beck and Teboulle 2009).
 
 solves: 
 
