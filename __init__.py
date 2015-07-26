@@ -1,3 +1,3 @@
 __author__ = 'bodonoghue'
 
-from apg import * 
+from apgpy import *
