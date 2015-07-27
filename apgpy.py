@@ -64,7 +64,7 @@ def solve(grad_f, prox_h, x_init,
             break
 
         if not use_gra:
-            theta = 2. / (1 + (1 + 4 / (theta ** 2)) ** 0.5)
+            theta = 2. / (1 + np.sqrt(1 + 4 / (theta ** 2)))
         else:
             theta = 1.
 
