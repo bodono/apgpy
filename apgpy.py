@@ -65,7 +65,7 @@ def solve(grad_f, prox_h, dim_x,
         else:
             theta = 1
 
-        if use_restart and np.inner(y - x, x - x_old) > 0:
+        if not use_gra and use_restart and np.inner(y - x, x - x_old) > 0:
             x = np.copy(x_old)
             y = np.copy(x)
             theta = 1
