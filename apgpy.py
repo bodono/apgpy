@@ -19,7 +19,7 @@ def solve(grad_f, prox_h, dim_x,
     x = np.copy(x_init) if x_init else np.zeros(dim_x)
     y = np.copy(x)
     g = grad_f(y)
-    theta = 1
+    theta = 1.
 
     if not step_size:
         # barzilai-borwein step-size initialization:
@@ -63,14 +63,14 @@ def solve(grad_f, prox_h, dim_x,
         if not use_gra:
             theta = 2 / (1 + np.sqrt(1 + 4 / (theta ** 2)))
         else:
-            theta = 1
+            theta = 1.
 
         if not use_gra and use_restart and np.inner(y - x, x - x_old) > 0:
-            x = np.copy(x_old)
-            y = np.copy(x)
-            theta = 1
             if debug:
                 print('restart, dg = %1.2e' % np.inner(y - x, x - x_old))
+            x = np.copy(x_old)
+            y = np.copy(x)
+            theta = 1.
         else:
             y = x + (1 - theta) * (x - x_old)
 
