@@ -1,8 +1,3 @@
-#import sys
-#sys.path.append("..")
-#del sys.path[0]
-#del sys.path[0]
-
 import numpy as np
 import apgpy as apg
 from apgwrapper import NumpyWrapper
@@ -26,6 +21,6 @@ AtA = np.dot(A.T, A)
 Atb = np.dot(A.T, b)
 
 def quad_grad(y):
-    return NumpyWrapper(np.dot(AtA, y.nparray) - Atb)
+    return np.dot(AtA, y) - Atb
 
 x = apg.solve(quad_grad, {}, np.zeros(n), eps=1e-10)

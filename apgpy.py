@@ -1,43 +1,51 @@
 from __future__ import print_function
 import numpy as np
 from apgwrapper import NumpyWrapper
+from functools import partial
 
+def npwrap(x):
+    if isinstance(x, np.ndarray):
+        return NumpyWrapper(x)
+    return x
+
+def npwrapfunc(f, *args):
+    return npwrap(f(*args))
 
 def solve(grad_f, prox_h, x_init,
-          max_iters=2000,
+          max_iters=2500,
           eps=1e-6,
           alpha=1.01,
           beta=0.5,
-          gen_plots=True,
           use_restart=True,
+          gen_plots=False,
           quiet=False,
           use_gra=False,
           step_size=False,
           fixed_step_size=False,
           debug=False):
 
-    if isinstance(x_init, np.ndarray):
-        x_init = NumpyWrapper(x_init)
+    df = partial(npwrapfunc, grad_f)
+    ph = partial(npwrapfunc, prox_h)
+
+    x_init = npwrap(x_init)
 
     x = x_init.copy()
     y = x.copy()
-    g = grad_f(y)
+    g = df(y.data)
     theta = 1.
 
     if not step_size:
         # barzilai-borwein step-size initialization:
-        t = 1 / g.norm()
+        t = 1. / g.norm()
         x_hat = x - t * g
-        g_hat = grad_f(x_hat)
+        g_hat = df(x_hat.data)
         t = abs((x - x_hat).dot(g - g_hat) / (g - g_hat).norm() ** 2)
     else:
         t = step_size
 
-    gen_plots = gen_plots and not quiet
-
     if gen_plots:
-        errs = np.zeros(max_iters)
         import matplotlib.pyplot as plt
+        errs = np.zeros(max_iters)
 
     k = 0
     err1 = np.nan
@@ -53,7 +61,7 @@ def solve(grad_f, prox_h, x_init,
         x = y - t * g
 
         if prox_h:
-            x = prox_h(x, t)
+            x = ph(x.data, t)
 
         err1 = (y - x).norm() / (1 + x.norm()) / t
 
@@ -78,7 +86,7 @@ def solve(grad_f, prox_h, x_init,
             y = x + (1 - theta) * (x - x_old)
 
         g_old = g.copy()
-        g = grad_f(y)
+        g = df(y.data)
 
         # tfocs-style backtracking:
         if not fixed_step_size:
@@ -100,4 +108,4 @@ def solve(grad_f, prox_h, x_init,
         plt.title('||Gk||/(1+||xk||)')
         plt.draw()
 
-    return x
+    return x.data
