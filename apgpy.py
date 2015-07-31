@@ -1,58 +1,68 @@
 from __future__ import print_function
 import numpy as np
+from apgwrapper import NumpyWrapper
+from functools import partial
 
+def npwrap(x):
+    if isinstance(x, np.ndarray):
+        return NumpyWrapper(x)
+    return x
 
-def solve(grad_f, prox_h, dim_x,
-          max_iters=2000,
+def npwrapfunc(f, *args):
+    return npwrap(f(*args))
+
+def solve(grad_f, prox_h, x_init,
+          max_iters=2500,
           eps=1e-6,
           alpha=1.01,
           beta=0.5,
-          gen_plots=True,
           use_restart=True,
-          x_init=False,
+          gen_plots=False,
           quiet=False,
           use_gra=False,
           step_size=False,
           fixed_step_size=False,
           debug=False):
 
-    x = np.copy(x_init) if x_init else np.zeros(dim_x)
-    y = np.copy(x)
-    g = grad_f(y)
+    df = partial(npwrapfunc, grad_f)
+    ph = partial(npwrapfunc, prox_h)
+
+    x_init = npwrap(x_init)
+
+    x = x_init.copy()
+    y = x.copy()
+    g = df(y.data)
     theta = 1.
 
     if not step_size:
         # barzilai-borwein step-size initialization:
-        t = 1 / np.linalg.norm(g)
+        t = 1. / g.norm()
         x_hat = x - t * g
-        g_hat = grad_f(x_hat)
-        t = abs(np.inner(x - x_hat, g - g_hat) / (np.linalg.norm(g - g_hat) ** 2))
+        g_hat = df(x_hat.data)
+        t = abs((x - x_hat).dot(g - g_hat) / (g - g_hat).norm() ** 2)
     else:
         t = step_size
 
-    gen_plots = gen_plots and not quiet
-
     if gen_plots:
         errs = np.zeros(max_iters)
-        import matplotlib.pyplot as plt
 
     k = 0
     err1 = np.nan
     iter_str = 'iter num %i, norm(Gk)/(1+norm(xk)): %1.2e, step-size: %1.2e'
     for k in range(max_iters):
 
-        if not quiet and np.mod(k, 100) == 0:
+        if not quiet and k % 100 == 0:
             print(iter_str % (k, err1, t))
 
-        x_old = np.copy(x)
-        y_old = np.copy(y)
+        x_old = x.copy()
+        y_old = y.copy()
 
         x = y - t * g
 
         if prox_h:
-            x = prox_h(x, t)
+            x = ph(x.data, t)
 
-        err1 = np.linalg.norm(y - x) / (1 + np.linalg.norm(x)) / t
+        err1 = (y - x).norm() / (1 + x.norm()) / t
 
         if gen_plots:
             errs[k] = err1
@@ -61,26 +71,26 @@ def solve(grad_f, prox_h, dim_x,
             break
 
         if not use_gra:
-            theta = 2 / (1 + np.sqrt(1 + 4 / (theta ** 2)))
+            theta = 2. / (1 + np.sqrt(1 + 4 / (theta ** 2)))
         else:
             theta = 1.
 
-        if not use_gra and use_restart and np.inner(y - x, x - x_old) > 0:
+        if not use_gra and use_restart and (y - x).dot(x - x_old) > 0:
             if debug:
-                print('restart, dg = %1.2e' % np.inner(y - x, x - x_old))
-            x = np.copy(x_old)
-            y = np.copy(x)
+                print('restart, dg = %1.2e' % (y - x).dot(x - x_old))
+            x = x_old.copy()
+            y = x.copy()
             theta = 1.
         else:
             y = x + (1 - theta) * (x - x_old)
 
-        g_old = np.copy(g)
-        g = grad_f(y)
+        g_old = g.copy()
+        g = df(y.data)
 
         # tfocs-style backtracking:
         if not fixed_step_size:
             t_old = t
-            t_hat = 0.5 * (np.linalg.norm(y - y_old) ** 2) / abs(np.inner(y - y_old, g_old - g))
+            t_hat = 0.5 * ((y - y_old).norm() ** 2) / abs((y - y_old).dot(g_old - g))
             t = min(alpha * t, max(beta * t, t_hat))
             if debug:
                 if t_old > t:
@@ -90,6 +100,7 @@ def solve(grad_f, prox_h, dim_x,
         print(iter_str % (k, err1, t))
         print('terminated')
     if gen_plots:
+        import matplotlib.pyplot as plt
         errs = errs[1:k]
         plt.figure()
         plt.semilogy(errs[1:k])
@@ -97,4 +108,4 @@ def solve(grad_f, prox_h, dim_x,
         plt.title('||Gk||/(1+||xk||)')
         plt.draw()
 
-    return x
+    return x.data
