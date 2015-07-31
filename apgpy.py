@@ -44,7 +44,6 @@ def solve(grad_f, prox_h, x_init,
         t = step_size
 
     if gen_plots:
-        import matplotlib.pyplot as plt
         errs = np.zeros(max_iters)
 
     k = 0
@@ -101,6 +100,7 @@ def solve(grad_f, prox_h, x_init,
         print(iter_str % (k, err1, t))
         print('terminated')
     if gen_plots:
+        import matplotlib.pyplot as plt
         errs = errs[1:k]
         plt.figure()
         plt.semilogy(errs[1:k])
